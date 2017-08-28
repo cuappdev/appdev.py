@@ -1,6 +1,10 @@
+import os
+for module in os.listdir(os.path.dirname(__file__)):
+  if module == '__init__.py' or module[-3:] != '.py':
+    continue
+  __import__(module[:-3], locals(), globals())
+del module
+
 __version__ = '0.0.1'
-__all__ = [
-  basename(f)[:-3]
-  for f in modules if isfile(f) and not f.endswith('__init__.py')
-]
+__all__ = []
 USER_AGENT = 'AppDev Core Modules %s' % __version__
