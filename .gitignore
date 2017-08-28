@@ -1,0 +1,9 @@
+*.pyc
+*.egg-info
+venv
+*.DS_Store
+*.egg*
+build
+dist
+pypi_guide
+clean
