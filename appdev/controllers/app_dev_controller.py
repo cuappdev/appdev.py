@@ -15,8 +15,8 @@ class AppDevController(BaseController):
     return self.get_path().replace('/', '-')
 
   def response(self, **kwargs):
-    content = self.content(**kwargs)
     try:
+      content = self.content(**kwargs)
       return jsonify({
         'success': True,
         'data': content
