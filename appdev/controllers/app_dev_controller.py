@@ -1,6 +1,6 @@
-from base_controller import *
-from flask import jsonify
 import abc
+from appdev.controllers.base_controller import *
+from flask import jsonify
 
 # A REST-API controller that handles boilerplate for
 # serving up JSON responses based on HTTP verbs
@@ -18,12 +18,12 @@ class AppDevController(BaseController):
     try:
       content = self.content(**kwargs)
       return jsonify({
-        'success': True,
-        'data': content
+          'success': True,
+          'data': content
       })
-    except Exception as e:
+    except Exception as e: # pylint: disable=W0703
       print e
       return jsonify({
-        'success': False,
-        'data': { 'errors': [str(e)] }
+          'success': False,
+          'data': {'errors': [str(e)]}
       })

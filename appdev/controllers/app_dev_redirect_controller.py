@@ -1,6 +1,6 @@
-from base_controller import *
-from flask import redirect
 import abc
+from appdev.controllers.base_controller import *
+from flask import redirect
 
 # A REST-API controller that handles boilerplate for
 # redirecting
@@ -16,4 +16,4 @@ class AppDevRedirectController(BaseController):
 
   def response(self, **kwargs):
     uri = self.make_uri(**kwargs)
-    return redirect(uri, code = 302)
+    return redirect(uri, code=302)
