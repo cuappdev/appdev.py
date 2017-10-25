@@ -70,6 +70,7 @@ class MySQLConnector(object):
         'database': database
     }
     self.connection_pool = Queue()
+    self.num_connections = num_connections
     self.num_threads = num_threads
     for _ in range(num_connections):
       cnx = mysql.connector.connect(**self.config)
@@ -79,6 +80,23 @@ class MySQLConnector(object):
     while not self.connection_pool.empty():
       connection = self.connection_pool.get()
       connection.close()
+
+  def scale_connection_pool(self, num_connections):
+    """
+      Alters the connection pool to have `num_connections` of connections in the
+      pool. Note `num_connections` must be a non-negative integer.
+    """
+    if self.num_connections < num_connections:
+      # Scale up
+      for _ in range(num_connections - self.num_connections):
+        cnx = mysql.connector.connect(**self.config)
+        self.connection_pool.put(cnx)
+    elif self.num_connections > num_connections:
+      # Scale down
+      for _ in range(self.num_connections - num_connections):
+        connection = self.connection_pool.get()
+        connection.close()
+    self.num_connections = num_connections
 
   def read_batch(self, table, start, end, interval_size=10):
     input_queue = Queue()
