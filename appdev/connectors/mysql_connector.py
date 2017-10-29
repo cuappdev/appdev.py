@@ -30,10 +30,10 @@ class WriterThread(DbThread):
         data = self.input_queue.get(timeout=self.queue_timeout)
       except Empty:
         break
-      values_string = ['%({})s'.format(col) for col in data.keys()]
+      placeholder_values_array = ['%({})s'.format(col) for col in data.keys()]
       insert_query = "INSERT INTO {} ({}) VALUES ({})" \
         .format(self.table, ', '.join(data.keys()),
-                ', '.join(values_string))
+                ', '.join(placeholder_values_array))
       cursor.execute(insert_query, data)
       connection.commit()
       self.input_queue.task_done()
@@ -84,8 +84,9 @@ class MySQLConnector(object):
   def scale_connection_pool(self, num_connections):
     """
       Alters the connection pool to have `num_connections` of connections in the
-      pool. Note `num_connections` must be a non-negative integer.
+      pool. Note `num_connections` must be a positive integer.
     """
+    assert num_connections > 0, "`num_connections` must be a positive integer"
     if self.num_connections < num_connections:
       # Scale up
       for _ in range(num_connections - self.num_connections):
