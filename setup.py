@@ -23,6 +23,7 @@ setup(
     package_data={'': ['README.rst']},
     install_requires=[
         'Flask',
+        'mysql-connector',
     ],
     tests_require=[],
     classifiers=[
