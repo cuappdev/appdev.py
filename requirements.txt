@@ -19,3 +19,4 @@ singledispatch==3.4.0.3
 six==1.11.0
 Werkzeug==0.12.2
 wrapt==1.10.11
+mysql-connector==2.1.4
