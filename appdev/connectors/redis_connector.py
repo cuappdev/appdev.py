@@ -2,9 +2,9 @@ import redis
 import numpy as np
 
 
-class RedisConn(object):
+class RedisConnector(object):
   """
-    RedisConn object creates a connector to an already running Redis instance.
+    RedisConnector object creates a connector to an already running Redis instance.
     Parameters:
         name (str): Naming the specific connection
         host (str): The host which we are connecting to. This is typically
@@ -18,12 +18,12 @@ class RedisConn(object):
     _single_connect(self):
           Returns a single connection that you can execute commands on
           Example:
-            redis = RedisConn(...)
+            redis = RedisConnector(...)
             connection = redis._single_connect()
     _connect_pool(self):
           Spawns a connection pool that you can pull connections from
           Example:
-            redis = RedisConn(...)
+            redis = RedisConnector(...)
             connection_pool = redis._connection_pool()
             connection = connection_pool.get_connection()
             connection.send_command(*args)
