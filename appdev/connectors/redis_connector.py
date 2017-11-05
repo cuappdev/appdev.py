@@ -1,10 +1,11 @@
-import redis
+import ast
+import redis as redisSource
 import numpy as np
 
 
 class RedisConnector(object):
   """
-    RedisConnector object creates a connector to an already running Redis instance.
+    RedisConnector object creates a connector to a running Redis instance.
     Parameters:
         name (str): Naming the specific connection
         host (str): The host which we are connecting to. This is typically
@@ -37,13 +38,13 @@ class RedisConnector(object):
 
   def _single_connect(self):
     # Connect to the DB
-     return redis.Redis(host=self.host, port=self.port, db=self.db)
+     return redisSource.Redis(host=self.host, port=self.port, db=self.db)
 
   def _connect_pool(self, max_c=None):
     # Connect to the connection pool
-    pool = redis.ConnectionPool(host=self.host, port=self.port,
-                                db=self.db, max_connections=max_c)
-    return redis.Redis(connection_pool=pool).connection_pool
+    pool = redisSource.ConnectionPool(host=self.host, port=self.port, \
+      db=self.db, max_connections=max_c)
+    return redisSource.Redis(connection_pool=pool).connection_pool
 
   def dump_matrix(self, conn, key, matrix):
     # Dumping numpy matrix into redis
@@ -54,9 +55,25 @@ class RedisConnector(object):
 
   def get_matrix(self, conn, key):
     # Getting numpy matrix from redis given key
+    assert(key), 'You need to pass in a key'
     result = conn.execute_command( \
     'ml.matrix.get', key)
     n_rows, n_columns, flattened_arr = result[0], result[1], result[2:]
     assert(isinstance(n_rows, long) \
       and isinstance(n_columns, long)), 'Assuming returned Row and Columns'
     return np.array(flattened_arr, dtype="float64").reshape(n_rows, n_columns)
+
+  def dump_dictionary(self, conn, input_dict):
+    # Dump arbitrary key-value pair into redis
+    assert input_dict, 'Dictionary must contain keys'
+    pipe = conn.pipeline()
+    for k, v in input_dict.items():
+      pipe.set(k, v)
+    pipe.execute()
+    assert not pipe, 'Pipeline did not execute properly'
+    return
+
+  def get_dictionary(self, conn, key):
+    # Returning a value given a Redis key
+    assert key, 'You need to pass in a key'
+    return ast.literal_eval(conn.execute_command('get', key))
