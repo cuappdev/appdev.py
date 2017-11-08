@@ -108,6 +108,7 @@ class MySQLConnector(object):
     self.num_connections = num_connections
 
   def read_batch(self, table, start=0, end=None, interval_size=10):
+    assert start <= end
     input_queue = Queue()
     result_queue = Queue()
     a = start
