@@ -4,17 +4,19 @@ import mysql.connector
 
 
 class DbThread(Thread):
-  def __init__(self, connection_pool, table, input_queue, result_queue=None,
-               queue_timeout=0.5):
+  def __init__(self, connection_pool, input_queue, queue_timeout=0.5):
     super(DbThread, self).__init__()
     self.connection_pool = connection_pool
-    self.table = table
     self.input_queue = input_queue
-    self.result_queue = result_queue
     self.queue_timeout = queue_timeout
 
 
 class WriterThread(DbThread):
+  def __init__(self, connection_pool, input_queue, table, queue_timeout=0.5):
+    super(WriterThread, self).__init__(connection_pool, input_queue,
+                                       queue_timeout=queue_timeout)
+    self.table = table
+
   def run(self):
     # Create query in the format:
     #   "INSERT INTO salaries (emp_no, salary, from_date, to_date)
@@ -29,6 +31,7 @@ class WriterThread(DbThread):
         # another item that will never come.
         data = self.input_queue.get(timeout=self.queue_timeout)
       except Empty:
+        self.connection_pool.put(connection)
         break
       placeholder_values_array = ['%({})s'.format(col) for col in data.keys()]
       insert_query = "INSERT INTO {} ({}) VALUES ({})" \
@@ -39,24 +42,29 @@ class WriterThread(DbThread):
       self.input_queue.task_done()
       self.connection_pool.put(connection)
 
-
 class ReaderThread(DbThread):
+  def __init__(self, connection_pool, input_queue,
+               result_queue, queue_timeout=0.5):
+    super(ReaderThread, self).__init__(connection_pool, input_queue,
+                                       queue_timeout=queue_timeout)
+    self.result_queue = result_queue
+
   def run(self):
     while not self.input_queue.empty():
       connection = self.connection_pool.get()
       cursor = connection.cursor()
       try:
-        a, b = self.input_queue.get(timeout=self.queue_timeout)
+        query = self.input_queue.get(timeout=self.queue_timeout)
       except Empty:
+        self.connection_pool.put(connection)
         break
-      read_query = "SELECT * FROM {} LIMIT {} OFFSET {}" \
-                     .format(self.table, b-a+1, a)
-      cursor.execute(read_query)
+      cursor.execute(query)
       result = []
       for row in cursor:
         result.append(row)
       self.input_queue.task_done()
-      self.result_queue.put(result)
+      if result:
+        self.result_queue.put(result)
       self.connection_pool.put(connection)
 
 
@@ -99,21 +107,36 @@ class MySQLConnector(object):
         connection.close()
     self.num_connections = num_connections
 
-  def read_batch(self, table, start, end, interval_size=10):
+  def read_batch(self, table, start=0, end=None, interval_size=10):
+    assert start <= end
     input_queue = Queue()
     result_queue = Queue()
     a = start
+    if end is None:
+      end = self.get_count(table)
     while a <= end:
-      input_queue.put((a, a + interval_size))
+      b = a + interval_size
+      read_query = "SELECT * FROM {} LIMIT {} OFFSET {}" \
+                     .format(table, b-a+1, a)
+      input_queue.put(read_query)
       a += interval_size
     for _ in range(self.num_threads):
-      ReaderThread(self.connection_pool, table, input_queue,
-                   result_queue=result_queue).start()
+      ReaderThread(self.connection_pool, input_queue, result_queue).start()
     input_queue.join()
     rows = []
     while not result_queue.empty():
       rows.extend(result_queue.get())
     return rows
+
+  def get_count(self, table):
+    connection = self.connection_pool.get()
+    cursor = connection.cursor()
+    cursor.execute('SELECT COUNT(*) FROM {}'.format(table))
+    result = []
+    for row in cursor:
+      result.append(row)
+    self.connection_pool.put(connection)
+    return result[0][0]
 
   def write_batch(self, table, rows):
     input_queue = Queue()
@@ -122,3 +145,16 @@ class MySQLConnector(object):
     for _ in range(self.num_threads):
       WriterThread(self.connection_pool, table, input_queue).start()
     input_queue.join()
+
+  def execute_batch(self, queries):
+    input_queue = Queue()
+    result_queue = Queue()
+    for q in queries:
+      input_queue.put(q)
+    for _ in range(self.num_threads):
+      ReaderThread(self.connection_pool, input_queue, result_queue).start()
+    input_queue.join()
+    rows = []
+    while not result_queue.empty():
+      rows.append(result_queue.get())
+    return rows
