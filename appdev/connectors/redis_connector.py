@@ -76,4 +76,7 @@ class RedisConnector(object):
   def get_dictionary(self, conn, key):
     # Returning a value given a Redis key
     assert key, 'You need to pass in a key'
-    return ast.literal_eval(conn.execute_command('get', key))
+    result = conn.execute_command('get', key)
+    if result is not None:
+      return ast.literal_eval(conn.execute_command('get', key))
+    return None
