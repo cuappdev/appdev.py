@@ -52,7 +52,7 @@ class ReaderThread(DbThread):
   def run(self):
     while not self.input_queue.empty():
       connection = self.connection_pool.get()
-      cursor = connection.cursor()
+      cursor = connection.cursor(dictionary=True)
       try:
         query = self.input_queue.get(timeout=self.queue_timeout)
       except Empty:
