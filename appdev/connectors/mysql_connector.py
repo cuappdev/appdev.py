@@ -143,7 +143,7 @@ class MySQLConnector(object):
     for row in rows:
       input_queue.put(row)
     for _ in range(self.num_threads):
-      WriterThread(self.connection_pool, table, input_queue).start()
+      WriterThread(self.connection_pool, input_queue, table).start()
     input_queue.join()
 
   def execute_batch(self, queries):
