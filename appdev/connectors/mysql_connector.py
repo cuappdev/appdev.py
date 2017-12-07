@@ -52,7 +52,7 @@ class ReaderThread(DbThread):
   def run(self):
     while not self.input_queue.empty():
       connection = self.connection_pool.get()
-      cursor = connection.cursor()
+      cursor = connection.cursor(dictionary=True)
       try:
         query = self.input_queue.get(timeout=self.queue_timeout)
       except Empty:
@@ -143,7 +143,7 @@ class MySQLConnector(object):
     for row in rows:
       input_queue.put(row)
     for _ in range(self.num_threads):
-      WriterThread(self.connection_pool, table, input_queue).start()
+      WriterThread(self.connection_pool, input_queue, table).start()
     input_queue.join()
 
   def execute_batch(self, queries):

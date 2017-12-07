@@ -24,7 +24,8 @@ setup(
     install_requires=[
         'Flask',
         'mysql-connector==2.1.4',
-        'redis'
+        'redis',
+        'numpy'
     ],
     tests_require=[],
     classifiers=[
