@@ -117,7 +117,7 @@ class MySQLConnector(object):
     while a <= end:
       b = a + interval_size
       read_query = "SELECT * FROM {} LIMIT {} OFFSET {}" \
-                     .format(table, b-a+1, a)
+                     .format(table, b-a, a)
       input_queue.put(read_query)
       a += interval_size
     for _ in range(self.num_threads):

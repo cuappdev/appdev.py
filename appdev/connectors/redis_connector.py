@@ -78,5 +78,5 @@ class RedisConnector(object):
     assert key, 'You need to pass in a key'
     result = conn.execute_command('get', key)
     if result is not None:
-      return ast.literal_eval(conn.execute_command('get', key))
+      return ast.literal_eval(result)
     return None
