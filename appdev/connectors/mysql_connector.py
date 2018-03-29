@@ -65,6 +65,7 @@ class ReaderThread(DbThread):
       self.input_queue.task_done()
       if result:
         self.result_queue.put(result)
+      connection.commit()
       self.connection_pool.put(connection)
 
 
