@@ -37,8 +37,11 @@ class WriterThread(DbThread):
       insert_query = "INSERT INTO {} ({}) VALUES ({})" \
         .format(self.table, ', '.join(data.keys()),
                 ', '.join(placeholder_values_array))
-      cursor.execute(insert_query, data)
-      connection.commit()
+      try:
+        cursor.execute(insert_query, data)
+        connection.commit()
+      except mysql.connector.errors.DatabaseError:
+        print 'Error inserting data into {}'.format(self.table)
       self.input_queue.task_done()
       self.connection_pool.put(connection)
 
