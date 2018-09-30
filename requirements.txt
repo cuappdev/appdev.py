@@ -23,3 +23,5 @@ singledispatch==3.4.0.3
 six==1.11.0
 Werkzeug==0.12.2
 wrapt==1.10.11
+fastparquet==0.1.6
+boto3==1.9.10
