@@ -22,7 +22,7 @@ class AppDevController(BaseController):
           'data': content
       })
     except Exception as e: # pylint: disable=W0703
-      print e
+      print(e)
       return jsonify({
           'success': False,
           'data': {'errors': [str(e)]}
